@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro Video Recorder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #111827; /* Tailwind gray-900 */
+            color: white;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-gray-800 p-4 shadow-md text-center">
+        <h1 class="text-xl font-bold text-white flex items-center justify-center gap-2">
+            <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path>
+            </svg>
+            Pro Video Recorder
+        </h1>
+        <p class="text-xs text-gray-400 mt-1">Select your external mic below</p>
+    </header>
+
+    <main class="flex-1 flex flex-col p-4 w-full max-w-2xl mx-auto gap-4">
+        
+        <div class="relative w-full aspect-[3/4] md:aspect-video bg-black rounded-2xl overflow-hidden shadow-lg border border-gray-700 flex items-center justify-center">
+            <!-- playsinline is crucial for iOS to prevent fullscreen takeover -->
+            <video id="videoPreview" autoplay playsinline muted class="w-full h-full object-cover"></video>
+            
+            <div id="statusBadge" class="absolute top-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2 hidden">
+                <span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                Recording <span id="recordingTime">00:00</span>
+            </div>
+
+            <div id="loadingOverlay" class="absolute inset-0 bg-gray-900/80 flex flex-col items-center justify-center z-10">
+                <svg class="animate-spin h-8 w-8 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-sm text-gray-300 text-center px-4">Requesting camera and microphone access...</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col gap-3">
+            <div>
+                <label for="audioSource" class="block text-sm font-medium text-gray-300 mb-1">Microphone</label>
+                <select id="audioSource" class="w-full bg-gray-900 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
+                    <option value="">Loading devices...</option>
+                </select>
+            </div>
+            <div>
+                <label for="videoSource" class="block text-sm font-medium text-gray-300 mb-1">Camera</label>
+                <select id="videoSource" class="w-full bg-gray-900 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
+                    <option value="">Loading devices...</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="errorBox" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-xl text-sm"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-auto md:mt-4">
+            <button id="startBtn" disabled class="col-span-2 md:col-span-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                Start Recording
+            </button>
+            
+            <button id="stopBtn" disabled class="col-span-2 md:col-span-1 bg-gray-700 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                Stop Recording
+            </button>
+
+            <a id="downloadBtn" class="hidden col-span-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Save Video to Device
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const videoElement = document.getElementById('videoPreview');
+        const audioSelect = document.getElementById('audioSource');
+        const videoSelect = document.getElementById('videoSource');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const statusBadge = document.getElementById('statusBadge');
+        const recordingTimeEl = document.getElementById('recordingTime');
+        const errorBox = document.getElementById('errorBox');
+
+        let currentStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let startTime = null;
+        let timerInterval = null;
+
+        function showError(message) {
+            errorBox.textContent = message;
+            errorBox.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorBox.classList.add('hidden');
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        async function getDevices() {
+            try {
+                // Request initial permissions to get device labels
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                
+                // Stop the initial tracks immediately, we just needed permission for labels
+                stream.getTracks().forEach(track => track.stop());
+                
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                
+                audioSelect.innerHTML = '';
+                videoSelect.innerHTML = '';
+                
+                let hasAudio = false;
+                let hasVideo = false;
+
+                devices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    
+                    if (device.kind === 'audioinput') {
+                        option.text = device.label || `Microphone ${audioSelect.length + 1}`;
+                        audioSelect.appendChild(option);
+                        hasAudio = true;
+                    } else if (device.kind === 'videoinput') {
+                        option.text = device.label || `Camera ${videoSelect.length + 1}`;
+                        videoSelect.appendChild(option);
+                        hasVideo = true;
+                    }
+                });
+
+                if (!hasAudio) audioSelect.innerHTML = '<option value="">No microphone found</option>';
+                if (!hasVideo) videoSelect.innerHTML = '<option value="">No camera found</option>';
+
+                // Start the actual stream with the selected/default devices
+                await startStream();
+
+            } catch (err) {
+                console.error('Error getting devices:', err);
+                showError('Camera/Microphone access denied or not available. Please check permissions.');
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        async function startStream() {
+            // Stop existing stream if any
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const audioSource = audioSelect.value;
+            const videoSource = videoSelect.value;
+
+            const constraints = {
+                audio: audioSource ? { deviceId: { exact: audioSource } } : true,
+                video: videoSource ? { deviceId: { exact: videoSource } } : { facingMode: 'environment' }
+            };
+
+            try {
+                hideError();
+                loadingOverlay.classList.remove('hidden');
+                
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = currentStream;
+                
+                loadingOverlay.classList.add('hidden');
+                startBtn.disabled = false;
+                
+            } catch (err) {
+                console.error('Error starting stream:', err);
+                showError('Could not start camera with selected settings.');
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        audioSelect.onchange = startStream;
+        videoSelect.onchange = startStream;
+
+        startBtn.onclick = () => {
+            if (!currentStream) return;
+            
+            recordedChunks = [];
+            
+            // Try to use webm, fallback to mp4, or whatever the browser supports
+            let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options = { mimeType: 'video/webm;codecs=vp8,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options = { mimeType: '' }; // Let browser decide
+                    }
+                }
+            }
+
+            try {
+                mediaRecorder = new MediaRecorder(currentStream, options);
+            } catch (e) {
+                console.error('Exception while creating MediaRecorder:', e);
+                showError('Your browser does not support recording with these settings.');
+                return;
+            }
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                
+                downloadBtn.href = url;
+                // Create a generic filename with timestamp
+                const ext = (mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4')) ? 'mp4' : 'webm';
+                downloadBtn.download = `Recording_${new Date().getTime()}.${ext}`;
+                
+                downloadBtn.classList.remove('hidden');
+                
+                // Reset UI
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                statusBadge.classList.add('hidden');
+                audioSelect.disabled = false;
+                videoSelect.disabled = false;
+                clearInterval(timerInterval);
+            };
+
+            // Start recording
+            mediaRecorder.start(1000); // collect data in 1s chunks
+            
+            // Update UI
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            downloadBtn.classList.add('hidden');
+            statusBadge.classList.remove('hidden');
+            audioSelect.disabled = true;
+            videoSelect.disabled = true;
+
+            // Start timer
+            startTime = Date.now();
+            recordingTimeEl.textContent = "00:00";
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                recordingTimeEl.textContent = formatTime(elapsed);
+            }, 1000);
+        };
+
+        stopBtn.onclick = () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        };
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            // Check if API is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showError("Your browser doesn't support the required features. Please use Google Chrome or Firefox.");
+                loadingOverlay.classList.add('hidden');
+                return;
+            }
+            getDevices();
+        });
+    </script>
+</body>
+</html>

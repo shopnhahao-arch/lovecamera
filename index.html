@@ -279,6 +279,7 @@
                             label = `📷 [Camera Sau] ${label}`;
                         } else if (label.toLowerCase().includes('front')) {
                             label = `🤳 [Camera Trước] ${label}`;
+                            option.dataset.isFront = "true"; // Đánh dấu camera trước
                         }
                         option.text = label;
                         videoSelect.appendChild(option);
@@ -308,6 +309,14 @@
             const selectedAudioId = audioSelect.value;
             const selectedVideoId = videoSelect.value;
             const chosenRes = resolutionSelect.value;
+
+            // Xử lý hiệu ứng lật gương cho camera trước
+            const selectedVideoOption = videoSelect.options[videoSelect.selectedIndex];
+            if (selectedVideoOption && selectedVideoOption.dataset.isFront === "true") {
+                videoElement.classList.add('-scale-x-100');
+            } else {
+                videoElement.classList.remove('-scale-x-100');
+            }
 
             let targetWidth = 1920;
             let targetHeight = 1080;

@@ -41,7 +41,7 @@
 <body class="min-h-screen flex flex-col justify-between antialiased">
 
     <!-- Header App -->
-    <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700/60 p-3.5 sticky top-0 z-30">
+    <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700/60 p-3.5 sticky top-0 z-50">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-red-600/20 border border-red-500/40 flex items-center justify-center">
@@ -59,13 +59,15 @@
     </header>
 
     <!-- Container chính -->
-    <main class="h-auto max-w-3xl w-full mx-auto p-2 sm:p-4 flex flex-col gap-3 justify-start">
+    <main class="flex-1 max-w-3xl w-full mx-auto p-3 sm:p-4 flex flex-col gap-3 justify-start">
 
         <!-- Màn hình xem camera trực tiếp (Viewfinder) -->
-        <div class="relative w-full aspect-[9/16] landscape:aspect-video landscape:max-h-[60vh] mx-auto bg-black rounded-2xl overflow-hidden.shadow-2xl.border.border-slate-800.flex.items-center.justify-center.group
+        <!-- Đã sửa class: h-[60vh] cho đt dọc, landscape:h-[75vh] cho màn hình ngang để ko tràn -->
+        <div class="relative w-full h-[60vh] landscape:h-[75vh] bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center group">
             
             <!-- Video Preview Stream -->
-            <video id="videoPreview" autoplay playsinline muted class="w-full h-full object-cover"></video>
+            <!-- Đã sửa class: object-contain để video không bị mất góc khi xoay ngang -->
+            <video id="videoPreview" autoplay playsinline muted class="w-full h-full object-contain"></video>
 
             <!-- Thống kê trạng thái đang quay (Recording Overlay) -->
             <div id="recordingOverlay" class="absolute top-3 left-3 right-3 flex justify-between items-center hidden pointer-events-none z-20">
@@ -74,10 +76,27 @@
                     <span>ĐANG QUAY</span>
                     <span id="recordingTimer" class="font-mono text-sm ml-1">00:00:00</span>
                 </div>
+                <div id="bitrateBadge" class="bg-slate-900/80 text-slate-300 text-[11px] font-mono px-2.5 py-1 rounded-full border border-slate-700/50 backdrop-blur-md">
+                    Bitrate: -- Mbps
+                </div>
+            </div>
+
+            <!-- Hàng nút hành động quay phim (ĐƯỢC CHUYỂN VÀO ĐÂY, ĐÈ LÊN VIDEO) -->
+            <div class="absolute bottom-4 left-0 right-0 px-4 flex justify-center gap-4 z-40">
+                <button id="startBtn" disabled class="flex-1 max-w-[160px] bg-emerald-600/80 backdrop-blur-md hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-0 disabled:-translate-y-2 disabled:pointer-events-none text-white text-sm font-bold py-3 px-4 rounded-full shadow-lg border border-emerald-400/30 transition-all duration-300 flex items-center justify-center gap-2">
+                    <span class="w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
+                    <span>Bắt đầu</span>
+                </button>
+                
+                <!-- Dùng class ẩn ban đầu cho nút stop để giao diện gọn gàng hơn, sẽ hiện khi bấm bắt đầu -->
+                <button id="stopBtn" disabled class="flex-1 max-w-[160px] bg-rose-600/80 backdrop-blur-md hover:bg-rose-500 active:bg-rose-700 disabled:opacity-0 disabled:translate-y-2 disabled:pointer-events-none text-white text-sm font-bold py-3 px-4 rounded-full shadow-lg border border-rose-400/30 transition-all duration-300 flex items-center justify-center gap-2">
+                    <span class="w-3.5 h-3.5 bg-white rounded-sm shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
+                    <span>Dừng</span>
+                </button>
             </div>
 
             <!-- Loading Spinner -->
-            <div id="loadingOverlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-3 z-30">
+            <div id="loadingOverlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-3 z-50">
                 <svg class="animate-spin h-9 w-9 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -144,7 +163,7 @@
                 </div>
             </div>
 
-            <!-- Tùy chỉnh Lọc âm Nâng cao (Tối ưu cho Micro ngoài) -->
+            <!-- Tùy chỉnh Lọc âm Nâng cao -->
             <div class="pt-2 border-t border-slate-700/50">
                 <span class="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wider">
                     Xử lý âm thanh (Nên TẮT nếu dùng Micro thu âm chuyên dụng):
@@ -167,21 +186,8 @@
 
         </div>
 
-        <!-- Hàng nút hành động quay phim -->
-        <div class="grid grid-cols-2 gap-3 mt-1">
-            <button id="startBtn" disabled class="col-span-1 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-950/40 transition duration-150 flex items-center justify-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-white"></span>
-                <span>Bắt đầu quay</span>
-            </button>
-            
-            <button id="stopBtn" disabled class="col-span-1 bg-slate-700 hover:bg-rose-600 active:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-150 flex items-center justify-center gap-2">
-                <span class="w-3 h-3 bg-white rounded-sm"></span>
-                <span>Dừng quay</span>
-            </button>
-        </div>
-
         <!-- Khu vực xem lại & Tải về video (Xuất hiện sau khi quay xong) -->
-        <div id="playbackSection" class="hidden bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3 mt-2">
+        <div id="playbackSection" class="hidden bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3 mt-2 mb-8">
             <div class="flex items-center justify-between">
                 <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
                     <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
@@ -191,14 +197,14 @@
             </div>
 
             <!-- Player xem lại -->
-            <div class="w-full aspect-[9/16] sm:aspect-video bg-black rounded-xl overflow-hidden border border-slate-700">
+            <div class="w-full aspect-[9/16] landscape:aspect-video sm:aspect-video bg-black rounded-xl overflow-hidden border border-slate-700">
                 <video id="recordedPlayback" controls class="w-full h-full object-contain"></video>
             </div>
 
             <!-- Nút Lưu Video -->
             <a id="downloadBtn" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-150 flex items-center justify-center gap-2 text-center cursor-pointer">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Tải Video về Bộ Nhớ Máy
+                Tải Video về Máy
             </a>
         </div>
 
@@ -264,7 +270,6 @@
 
         async function populateDevices() {
             try {
-                // Yêu cầu quyền ban đầu để lấy tên nhãn thiết bị (Micro, Camera)
                 const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                 tempStream.getTracks().forEach(track => track.stop());
 
@@ -282,7 +287,6 @@
 
                     if (device.kind === 'audioinput') {
                         audioCount++;
-                        // Nhận diện nếu có tên micro ngoài hoặc ghi chú rõ ràng
                         let label = device.label || `Microphone ${audioCount}`;
                         if (label.toLowerCase().includes('external') || label.toLowerCase().includes('headset') || label.toLowerCase().includes('usb')) {
                             label = `🎙️ [Micro Ngoài] ${label}`;
@@ -305,7 +309,6 @@
                 if (audioCount === 0) audioSelect.innerHTML = '<option value="">Không tìm thấy Micro</option>';
                 if (videoCount === 0) videoSelect.innerHTML = '<option value="">Không tìm thấy Camera</option>';
 
-                // Khởi chạy stream ban đầu
                 await initializeStream();
 
             } catch (err) {
@@ -327,7 +330,6 @@
             const selectedVideoId = videoSelect.value;
             const chosenRes = resolutionSelect.value;
 
-            // Thiết lập độ phân giải yêu cầu
             let targetWidth = 1920;
             let targetHeight = 1080;
 
@@ -339,7 +341,6 @@
                 targetHeight = 720;
             }
 
-            // Constraints cho Micro & Camera
             const constraints = {
                 audio: {
                     deviceId: selectedAudioId ? { exact: selectedAudioId } : undefined,
@@ -359,7 +360,6 @@
                 currentStream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.srcObject = currentStream;
 
-                // Kiểm tra thông số thực tế nhận được từ track video
                 const videoTrack = currentStream.getVideoTracks()[0];
                 if (videoTrack) {
                     const settings = videoTrack.getSettings();
@@ -377,7 +377,6 @@
                 console.error('Lỗi khởi tạo camera stream:', err);
                 showError('Không thể mở camera với độ phân giải này. Đang thử lại với thiết lập mặc định...');
                 
-                // Fallback thử lại với cấu hình căn bản nếu camera không hỗ trợ chế độ được yêu cầu
                 try {
                     currentStream = await navigator.mediaDevices.getUserMedia({
                         audio: true,
@@ -405,7 +404,6 @@
 
             recordedChunks = [];
 
-            // Tìm định dạng video hỗ trợ tốt nhất trên Chrome / Android
             const mimeTypes = [
                 'video/mp4;codecs=avc1,mp4a',
                 'video/mp4',
@@ -447,28 +445,23 @@
             };
 
             mediaRecorder.onstop = () => {
-                // Tạo Blob từ các chunk dữ liệu thu được
                 const finalBlob = new Blob(recordedChunks, { 
                     type: mediaRecorder.mimeType || 'video/mp4' 
                 });
                 
                 const videoUrl = URL.createObjectURL(finalBlob);
 
-                // Cập nhật trình phát video xem lại
                 recordedPlayback.src = videoUrl;
                 videoFileSize.textContent = formatBytes(finalBlob.size);
 
-                // Cập nhật nút Download
                 const isMp4 = (mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4'));
                 const fileExt = isMp4 ? 'mp4' : 'webm';
                 downloadBtn.href = videoUrl;
                 downloadBtn.download = `FullHD_Video_${new Date().toISOString().replace(/[:.]/g, '-')}.${fileExt}`;
 
-                // Hiển thị phần xem lại
                 playbackSection.classList.remove('hidden');
                 playbackSection.scrollIntoView({ behavior: 'smooth' });
 
-                // Khôi phục trạng thái nút bấm
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
                 recordingOverlay.classList.add('hidden');
@@ -480,10 +473,8 @@
                 clearInterval(timerInterval);
             };
 
-            // Bắt đầu ghi hình (mỗi 1 giây gửi dữ liệu 1 lần)
             mediaRecorder.start(1000);
 
-            // Cập nhật giao diện khi bắt đầu quay
             startBtn.disabled = true;
             stopBtn.disabled = false;
             playbackSection.classList.add('hidden');
@@ -494,7 +485,6 @@
             videoSelect.disabled = true;
             resolutionSelect.disabled = true;
 
-            // Đếm thời gian quay thực tế
             let elapsedSeconds = 0;
             recordingTimer.textContent = "00:00:00";
             timerInterval = setInterval(() => {
